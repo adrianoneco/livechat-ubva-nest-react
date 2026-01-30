@@ -1,0 +1,159 @@
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { NotificationProvider } from "@/contexts/NotificationContext";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { WebSocketProvider } from "@/contexts/WebSocketContext";
+import { PWAProvider } from "@/contexts/PWAContext";
+import { ProtectedRoute } from "@/components/auth";
+import { AdminRoute } from "@/components/auth/AdminRoute";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { OfflineBanner, UpdateBanner, InstallPrompt } from "@/components/pwa";
+import Index from "./pages/Index";
+import Auth from "./pages/Auth";
+import ResetPassword from "./pages/ResetPassword";
+import PendingApproval from "./pages/PendingApproval";
+import WhatsApp from "./pages/WhatsApp";
+import WhatsAppSettings from "./pages/WhatsAppSettings";
+import WhatsAppRelatorio from "./pages/WhatsAppRelatorio";
+import WhatsAppContatos from "./pages/WhatsAppContatos";
+import SalesDashboard from "./pages/SalesDashboard";
+import AdminConversations from "./pages/AdminConversations";
+import AdminTickets from "./pages/AdminTickets";
+import PermissionsCenter from "./pages/PermissionsCenter";
+import ApiDocs from "./pages/ApiDocs";
+import NotFound from "./pages/NotFound";
+
+const queryClient = new QueryClient();
+
+const App = () => {
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <PWAProvider>
+          <AuthProvider>
+            <WebSocketProvider>
+              <NotificationProvider>
+                <TooltipProvider>
+                  <Toaster />
+                  <Sonner />
+                  <OfflineBanner />
+                  <UpdateBanner />
+                  <InstallPrompt />
+                  <ErrorBoundary>
+                  <Routes>
+                    <Route path="/auth" element={<Auth />} />
+                    <Route path="/reset-password" element={<ResetPassword />} />
+                    <Route
+                      path="/pending-approval"
+                      element={
+                        <ProtectedRoute>
+                          <PendingApproval />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/"
+                      element={
+                        <ProtectedRoute>
+                          <Index />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/whatsapp/:conversationId"
+                      element={
+                        <ProtectedRoute>
+                          <WhatsApp />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/whatsapp"
+                      element={
+                        <ProtectedRoute>
+                          <WhatsApp />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/whatsapp/settings"
+                      element={
+                        <ProtectedRoute>
+                          <WhatsAppSettings />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/whatsapp/relatorio"
+                      element={
+                        <ProtectedRoute>
+                          <WhatsAppRelatorio />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/whatsapp/contatos"
+                      element={
+                        <ProtectedRoute>
+                          <WhatsAppContatos />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/vendas"
+                      element={
+                        <ProtectedRoute>
+                          <SalesDashboard />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/admin/conversas"
+                      element={
+                        <ProtectedRoute>
+                          <AdminRoute>
+                            <AdminConversations />
+                          </AdminRoute>
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/admin/tickets"
+                      element={
+                        <ProtectedRoute>
+                          <AdminRoute>
+                            <AdminTickets />
+                          </AdminRoute>
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/admin/permissoes"
+                      element={
+                        <ProtectedRoute>
+                          <AdminRoute allowedRoles={["admin"]}>
+                            <PermissionsCenter />
+                          </AdminRoute>
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route path="/api-docs" element={<ApiDocs />} />
+                    {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </ErrorBoundary>
+              </TooltipProvider>
+            </NotificationProvider>
+          </WebSocketProvider>
+        </AuthProvider>
+      </PWAProvider>
+    </BrowserRouter>
+  </QueryClientProvider>
+  );
+};
+
+export default App;

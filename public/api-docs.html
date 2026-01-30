@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LiveChat WhatsApp API - Documentação</title>
+  <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui.css" />
+  <link rel="icon" type="image/png" href="https://unpkg.com/swagger-ui-dist@5.11.0/favicon-32x32.png" sizes="32x32" />
+  <style>
+    html {
+      box-sizing: border-box;
+      overflow: -moz-scrollbars-vertical;
+      overflow-y: scroll;
+    }
+    
+    *,
+    *:before,
+    *:after {
+      box-sizing: inherit;
+    }
+    
+    body {
+      margin: 0;
+      background: #fafafa;
+    }
+    
+    .topbar {
+      background-color: #1a1a2e !important;
+    }
+    
+    .swagger-ui .topbar .download-url-wrapper .select-label {
+      color: #fff;
+    }
+    
+    .swagger-ui .info .title {
+      color: #1a1a2e;
+    }
+    
+    .swagger-ui .info .title small.version-stamp {
+      background-color: #10B981;
+    }
+    
+    .swagger-ui .btn.authorize {
+      border-color: #10B981;
+      color: #10B981;
+    }
+    
+    .swagger-ui .btn.authorize svg {
+      fill: #10B981;
+    }
+    
+    .swagger-ui .opblock.opblock-post {
+      border-color: #10B981;
+      background: rgba(16, 185, 129, 0.1);
+    }
+    
+    .swagger-ui .opblock.opblock-post .opblock-summary-method {
+      background: #10B981;
+    }
+    
+    .swagger-ui .opblock.opblock-get {
+      border-color: #3b82f6;
+      background: rgba(59, 130, 246, 0.1);
+    }
+    
+    .swagger-ui .opblock.opblock-get .opblock-summary-method {
+      background: #3b82f6;
+    }
+    
+    .swagger-ui .opblock.opblock-put {
+      border-color: #f59e0b;
+      background: rgba(245, 158, 11, 0.1);
+    }
+    
+    .swagger-ui .opblock.opblock-put .opblock-summary-method {
+      background: #f59e0b;
+    }
+    
+    .swagger-ui .opblock.opblock-delete {
+      border-color: #ef4444;
+      background: rgba(239, 68, 68, 0.1);
+    }
+    
+    .swagger-ui .opblock.opblock-delete .opblock-summary-method {
+      background: #ef4444;
+    }
+    
+    .swagger-ui .btn.execute {
+      background-color: #10B981;
+      border-color: #10B981;
+    }
+    
+    .swagger-ui .btn.execute:hover {
+      background-color: #059669;
+    }
+    
+    .swagger-ui section.models {
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+    
+    .swagger-ui section.models.is-open h4 {
+      border-bottom: 1px solid rgba(59, 130, 246, 0.3);
+    }
+    
+    .swagger-ui .model-title {
+      color: #1a1a2e;
+    }
+    
+    .custom-header {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+    
+    .custom-header h1 {
+      margin: 0;
+      font-size: 2rem;
+      font-weight: 600;
+    }
+    
+    .custom-header p {
+      margin: 10px 0 0;
+      opacity: 0.8;
+    }
+    
+    .custom-header .badges {
+      margin-top: 15px;
+    }
+    
+    .custom-header .badge {
+      display: inline-block;
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      margin: 0 5px;
+      background: rgba(255, 255, 255, 0.1);
+    }
+    
+    .custom-header .badge.green {
+      background: #10B981;
+    }
+  </style>
+</head>
+<body>
+  <div class="custom-header">
+    <h1>📱 LiveChat WhatsApp API</h1>
+    <p>Documentação completa da API de integração WhatsApp</p>
+    <div class="badges">
+      <span class="badge green">v2.0.0</span>
+      <span class="badge">OpenAPI 3.0</span>
+      <span class="badge">Supabase Edge Functions</span>
+      <span class="badge">ubva.com.br</span>
+    </div>
+  </div>
+  <div id="swagger-ui"></div>
+  <script src="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui-bundle.js" charset="UTF-8"></script>
+  <script src="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui-standalone-preset.js" charset="UTF-8"></script>
+  <script>
+    window.onload = function() {
+      // Get base URL dynamically
+      const baseUrl = window.location.origin;
+      // Get Supabase URL from same host but port 54321
+      const host = window.location.hostname;
+      const supabaseUrl = `http://${host}:54321/functions/v1`;
+      
+      // Check if domain is allowed
+      const allowedDomains = ['ubva.com.br', 'localhost', '127.0.0.1', '192.168.3.100'];
+      const isAllowed = allowedDomains.some(d => host.includes(d) || host === d);
+      
+      if (!isAllowed) {
+        document.getElementById('swagger-ui').innerHTML = `
+          <div style="padding: 40px; text-align: center;">
+            <h2 style="color: #ef4444;">⚠️ Acesso Restrito</h2>
+            <p>Esta API está disponível apenas para o domínio ubva.com.br</p>
+          </div>
+        `;
+        return;
+      }
+      
+      const ui = SwaggerUIBundle({
+        url: baseUrl + "/swagger.json",
+        dom_id: '#swagger-ui',
+        deepLinking: true,
+        presets: [
+          SwaggerUIBundle.presets.apis,
+          SwaggerUIStandalonePreset
+        ],
+        plugins: [
+          SwaggerUIBundle.plugins.DownloadUrl
+        ],
+        layout: "StandaloneLayout",
+        defaultModelsExpandDepth: 1,
+        defaultModelExpandDepth: 2,
+        docExpansion: "list",
+        filter: true,
+        showExtensions: true,
+        showCommonExtensions: true,
+        tryItOutEnabled: true,
+        persistAuthorization: true,
+        displayRequestDuration: true,
+        syntaxHighlight: {
+          activate: true,
+          theme: "monokai"
+        },
+        requestInterceptor: (request) => {
+          // Add origin header for CORS
+          request.headers['Origin'] = window.location.origin;
+          return request;
+        },
+        onComplete: function() {
+          // Override server URL based on current hostname
+          console.log('[Swagger] Using Supabase URL:', supabaseUrl);
+          console.log('[Swagger] Domain check:', host, 'allowed:', isAllowed);
+        }
+      });
+      
+      window.ui = ui;
+    };
+  </script>
+</body>
+</html>

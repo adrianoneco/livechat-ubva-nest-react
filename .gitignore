@@ -1,0 +1,46 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+.env
+server/.env
+*.mp3
+# Legacy Supabase
+supabase/*
+backup/
+scripts/
+tests/
+data/
+# Temporary files
+*.sh
+*.sql
+*.cjs
+
+FILES_CREATED.md
+REORGANIZACAO_ESTRUTURA.md
+VERIFICACAO_FINAL.md
+bun.lockb
+
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+bun.lockb
+bun.lock
+server/bun.lock
+bun.lock

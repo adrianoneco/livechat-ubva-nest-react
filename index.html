@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>LiveChat</title>
+    <meta name="description" content="Sistema de atendimento via WhatsApp" />
+    <meta name="author" content="UBVA" />
+
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#0f172a" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="LiveChat" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="application-name" content="LiveChat" />
+    <meta name="msapplication-TileColor" content="#0f172a" />
+    <meta name="msapplication-tap-highlight" content="no" />
+    <meta name="format-detection" content="telephone=no" />
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- Favicon and Icons -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="/icons/icon-152x152.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-192x192.png" />
+    <link rel="apple-touch-icon" sizes="167x167" href="/icons/icon-192x192.png" />
+
+    <!-- Apple Splash Screens -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="LiveChat" />
+    <meta property="og:description" content="Sistema de atendimento via WhatsApp" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/icons/icon-512x512.png" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="LiveChat" />
+    <meta name="twitter:description" content="Sistema de atendimento via WhatsApp" />
+    <meta name="twitter:image" content="/icons/icon-512x512.png" />
+  </head>
+
+  <body>
+    <div id="root"></div>
+    <!-- Runtime error overlay for mobile debugging -->
+    <div id="error-overlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(15,23,42,0.95);color:#fff;padding:16px;overflow:auto;"> 
+      <h2 style="margin-top:0">Erro de execução</h2>
+      <pre id="error-overlay-message" style="white-space:pre-wrap;font-size:13px;line-height:1.4"></pre>
+      <button id="error-overlay-close" style="margin-top:12px;padding:8px 12px;border-radius:6px;background:#22c55e;border:none;color:#071018">Fechar</button>
+    </div>
+    <script>
+      // Show a helpful overlay instead of blank screen on uncaught errors
+      function showErrorOverlay(msg) {
+        try {
+          const overlay = document.getElementById('error-overlay');
+          const pre = document.getElementById('error-overlay-message');
+          overlay.style.display = 'block';
+          pre.textContent = msg;
+          document.getElementById('error-overlay-close').onclick = () => overlay.style.display = 'none';
+        } catch (e) {
+          // fallback
+          alert(msg);
+        }
+      }
+
+      window.addEventListener('error', (e) => {
+        console.error('[Runtime Error]', e.error || e.message);
+        showErrorOverlay((e.error && e.error.stack) || e.message || String(e));
+      });
+
+      window.addEventListener('unhandledrejection', (ev) => {
+        console.error('[Unhandled Rejection]', ev.reason);
+        showErrorOverlay((ev.reason && ev.reason.stack) || String(ev.reason));
+      });
+
+      // For installs opened from browser, detect display-mode
+      if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true) {
+        console.log('[PWA] Running as standalone');
+      }
+    </script>
+    <script type="module" src="/client/main.tsx"></script>
+    
+    <!-- Service Worker Registration -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then((registration) => {
+              console.log('[PWA] Service Worker registered:', registration.scope);
+              
+              // Check for updates periodically
+              setInterval(() => {
+                registration.update();
+              }, 60 * 60 * 1000); // Check every hour
+            })
+            .catch((error) => {
+              console.error('[PWA] Service Worker registration failed:', error);
+            });
+        });
+      }
+    </script>
+    
+    <!-- Offline Detection -->
+    <noscript>
+      <style>
+        body { 
+          font-family: sans-serif; 
+          display: flex; 
+          align-items: center; 
+          justify-content: center; 
+          min-height: 100vh; 
+          background: #0f172a; 
+          color: #e2e8f0; 
+          text-align: center; 
+          padding: 2rem;
+        }
+      </style>
+      <div>
+        <h1>JavaScript Necessário</h1>
+        <p>Este aplicativo requer JavaScript para funcionar. Por favor, habilite o JavaScript no seu navegador.</p>
+      </div>
+    </noscript>
+  </body>
+</html>

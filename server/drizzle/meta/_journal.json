@@ -1,0 +1,62 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1769302434316,
+      "tag": "0000_steep_tenebrous",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1769302434317,
+      "tag": "0001_seed_permission_types",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1769302434318,
+      "tag": "0002_seed_admin_user",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1769312660751,
+      "tag": "0003_flawless_red_wolf",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1769441067582,
+      "tag": "0004_nebulous_glorian",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1769441327834,
+      "tag": "0005_friendly_komodo",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1769442752699,
+      "tag": "0006_round_mesmero",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1769707886020,
+      "tag": "0007_tiny_gateway",
+      "breakpoints": true
+    }
+  ]
+}
