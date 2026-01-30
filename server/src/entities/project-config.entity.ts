@@ -5,10 +5,10 @@ export class ProjectConfig {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ unique: true })
+  @Column({ type: 'varchar', unique: true })
   key: string;
 
-  @Column()
+  @Column({ type: 'text' })
   value: string;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })

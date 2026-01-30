@@ -7,22 +7,22 @@ export class Profile {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'full_name' })
+  @Column({ name: 'full_name', type: 'varchar' })
   fullName: string;
 
-  @Column({ name: 'avatar_url', nullable: true })
+  @Column({ name: 'avatar_url', type: 'varchar', nullable: true })
   avatarUrl: string;
 
-  @Column({ default: 'online', nullable: true })
+  @Column({ type: 'varchar', default: 'online', nullable: true })
   status: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   email: string;
 
-  @Column({ name: 'is_active', default: true })
+  @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive: boolean;
 
-  @Column({ name: 'is_approved', default: false, nullable: true })
+  @Column({ name: 'is_approved', type: 'boolean', default: false, nullable: true })
   isApproved: boolean;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })

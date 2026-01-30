@@ -13,22 +13,22 @@ export class Ticket {
   @Column({ name: 'numero', generated: 'increment', type: 'int' })
   numero: number;
 
-  @Column({ name: 'conversation_id' })
+  @Column({ name: 'conversation_id', type: 'uuid' })
   conversationId: string;
 
-  @Column({ name: 'sector_id', nullable: true })
+  @Column({ name: 'sector_id', type: 'uuid', nullable: true })
   sectorId: string;
 
-  @Column({ default: 'aberto' })
+  @Column({ type: 'varchar', default: 'aberto' })
   status: string;
 
-  @Column({ default: 'whatsapp', nullable: true })
+  @Column({ type: 'varchar', default: 'whatsapp', nullable: true })
   canal: string;
 
-  @Column({ default: 'outro', nullable: true })
+  @Column({ type: 'varchar', default: 'outro', nullable: true })
   categoria: string;
 
-  @Column({ default: 'media', nullable: true })
+  @Column({ type: 'varchar', default: 'media', nullable: true })
   prioridade: string;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
@@ -37,7 +37,7 @@ export class Ticket {
   @Column({ name: 'closed_at', type: 'timestamptz', nullable: true })
   closedAt: Date;
 
-  @Column({ name: 'closed_by', nullable: true })
+  @Column({ name: 'closed_by', type: 'uuid', nullable: true })
   closedBy: string;
 
   @ManyToOne(() => WhatsappConversation)

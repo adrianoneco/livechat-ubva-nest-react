@@ -131,4 +131,8 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     this.server.to(`instance:${instanceId}`).emit('instance:status', { instanceId, status });
     this.server.emit('instances:updated', { instanceId, status });
   }
+
+  sendToAll(event: string, data: any) {
+    this.server.emit(event, data);
+  }
 }

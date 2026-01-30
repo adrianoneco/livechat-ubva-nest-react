@@ -5,16 +5,16 @@ export class KnowledgeOptimizationLog {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'optimization_type', length: 100 })
+  @Column({ name: 'optimization_type', type: 'varchar', length: 100 })
   optimizationType: string;
 
-  @Column({ name: 'items_affected', default: 0, nullable: true })
+  @Column({ name: 'items_affected', type: 'int', default: 0, nullable: true })
   itemsAffected: number;
 
   @Column({ type: 'jsonb', nullable: true })
   changes: any;
 
-  @Column({ name: 'performed_by', length: 50, default: 'system', nullable: true })
+  @Column({ name: 'performed_by', type: 'varchar', length: 50, default: 'system', nullable: true })
   performedBy: string;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamp' })

@@ -1,8 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { WhatsappConversation, WhatsappMessage, WhatsappContact } from '../entities';
 import { WebsocketGateway } from '../websocket/websocket.gateway';
+import { BaileysService } from '../whatsapp/baileys.service';
 
 @Injectable()
 export class ConversationsService {
@@ -15,6 +16,8 @@ export class ConversationsService {
     private contactRepository: Repository<WhatsappContact>,
     private dataSource: DataSource,
     private wsGateway: WebsocketGateway,
+    @Inject(forwardRef(() => BaileysService))
+    private baileysService: BaileysService,
   ) {}
 
   async getConversations(filters: { status?: string; assignedTo?: string; search?: string }) {
@@ -128,29 +131,19 @@ export class ConversationsService {
       this.wsGateway.messageStatusChanged(conversationId, msg.id, 'read');
     }
 
-    // Try to notify Evolution API (best effort)
-    this.notifyEvolutionApiRead(conv, messagesToMark).catch(err => 
-      console.warn('[conversations/read] Evolution API error:', err)
+    // Try to mark as read via Baileys (best effort)
+    this.notifyBaileysRead(conv, messagesToMark).catch(err => 
+      console.warn('[conversations/read] Baileys read notification error:', err)
     );
 
     return { success: true, markedCount: messagesToMark.length };
   }
 
-  private async notifyEvolutionApiRead(conv: any, messagesToMark: any[]) {
+  private async notifyBaileysRead(conv: any, messagesToMark: any[]) {
     if (messagesToMark.length === 0) return;
 
-    const secretsResult = await this.dataSource.query(
-      'SELECT api_url, api_key FROM whatsapp_instance_secrets WHERE instance_id = $1 LIMIT 1',
-      [conv.instance_id]
-    );
-
-    if (secretsResult.length === 0) return;
-
-    const secrets = secretsResult[0];
-    const providerType = conv.provider_type || 'self_hosted';
-    const instanceIdentifier = providerType === 'cloud' && conv.instance_id_external
-      ? conv.instance_id_external
-      : conv.instance_name;
+    const instanceName = conv.instance_name;
+    if (!instanceName) return;
 
     const contactMetadata = conv.contact_metadata || {};
     const senderPn = contactMetadata.sender_pn;
@@ -166,29 +159,17 @@ export class ConversationsService {
       remoteJid = `${conv.phone_number.replace(/\D/g, '')}@s.whatsapp.net`;
     }
 
-    const readMessages = messagesToMark
+    const messageIds = messagesToMark
       .filter((m: any) => m.message_id)
-      .map((m: any) => ({
-        id: m.message_id,
-        fromMe: false,
-        remoteJid: m.remote_jid || remoteJid,
-      }));
+      .map((m: any) => m.message_id);
 
-    if (readMessages.length > 0) {
-      const apiUrl = (secrets.api_url || '').replace(/\/$/, '');
-      const target = `${apiUrl}/chat/markMessageAsRead/${instanceIdentifier}`;
-
-      const headers: Record<string, string> = { 
-        'Content-Type': 'application/json',
-        'apikey': secrets.api_key,
-      };
-
-      fetch(target, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ readMessages }),
-        signal: AbortSignal.timeout(5000),
-      }).catch(() => {});
+    if (messageIds.length > 0) {
+      try {
+        await this.baileysService.markAsRead(instanceName, remoteJid, messageIds);
+      } catch (error) {
+        // Best effort - don't throw
+        console.warn('[conversations/read] Failed to mark as read in WhatsApp:', error);
+      }
     }
   }
 

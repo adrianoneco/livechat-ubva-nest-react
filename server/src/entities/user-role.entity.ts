@@ -6,10 +6,10 @@ export class UserRole {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'user_id' })
+  @Column({ name: 'user_id', type: 'uuid' })
   userId: string;
 
-  @Column({ default: 'agent' })
+  @Column({ type: 'varchar', default: 'agent' })
   role: 'admin' | 'supervisor' | 'agent';
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })

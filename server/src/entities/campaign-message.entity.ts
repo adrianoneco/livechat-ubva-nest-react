@@ -6,16 +6,16 @@ export class CampaignMessage {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'campaign_id' })
+  @Column({ name: 'campaign_id', type: 'uuid' })
   campaignId: string;
 
-  @Column({ name: 'contact_id' })
+  @Column({ name: 'contact_id', type: 'uuid' })
   contactId: string;
 
-  @Column({ name: 'phone_number', length: 20 })
+  @Column({ name: 'phone_number', type: 'varchar', length: 20 })
   phoneNumber: string;
 
-  @Column({ length: 50, default: 'pending' })
+  @Column({ type: 'varchar', length: 50, default: 'pending' })
   status: string;
 
   @Column({ name: 'sent_at', type: 'timestamp', nullable: true })
@@ -30,7 +30,7 @@ export class CampaignMessage {
   @Column({ type: 'text', nullable: true })
   error: string;
 
-  @Column({ name: 'whatsapp_message_id', length: 255, nullable: true })
+  @Column({ name: 'whatsapp_message_id', type: 'varchar', length: 255, nullable: true })
   whatsappMessageId: string;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamp' })

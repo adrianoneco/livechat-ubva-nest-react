@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule } from './config/config.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { ConversationsModule } from './conversations/conversations.module';
@@ -18,13 +17,17 @@ import { TicketsModule } from './tickets/tickets.module';
 import { IntegrationsModule } from './integrations/integrations.module';
 import { AudioModule } from './audio/audio.module';
 import { FunctionsModule } from './functions/functions.module';
-import { StorageModule } from './storage/storage.module';
 import { TablesModule } from './tables/tables.module';
 import { WebsocketModule } from './websocket/websocket.module';
 import { HealthController } from './health.controller';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env'
+    }),
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DB_HOST || 'localhost',
@@ -33,10 +36,10 @@ import { HealthController } from './health.controller';
       password: process.env.DB_PASSWORD || 'postgres',
       database: process.env.DB_NAME || 'livechat',
       entities: [__dirname + '/entities/*.entity{.ts,.js}'],
-      synchronize: false, // Don't auto-sync in production - use migrations
-      logging: process.env.NODE_ENV !== 'production',
+      synchronize: true, // Don't auto-sync in production - use migrations
+      logging: false,
     }),
-    ConfigModule,
+
     AuthModule,
     UsersModule,
     ConversationsModule,
@@ -54,7 +57,6 @@ import { HealthController } from './health.controller';
     IntegrationsModule,
     AudioModule,
     FunctionsModule,
-    StorageModule,
     TablesModule,
     WebsocketModule,
   ],

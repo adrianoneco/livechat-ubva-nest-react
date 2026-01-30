@@ -7,10 +7,10 @@ export class Feedback {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'ticket_id' })
+  @Column({ name: 'ticket_id', type: 'uuid' })
   ticketId: string;
 
-  @Column()
+  @Column({ type: 'int' })
   nota: number;
 
   @Column({ type: 'text', nullable: true })

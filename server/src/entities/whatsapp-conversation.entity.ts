@@ -9,25 +9,25 @@ export class WhatsappConversation {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'instance_id' })
+  @Column({ name: 'instance_id', type: 'uuid' })
   instanceId: string;
 
-  @Column({ name: 'contact_id' })
+  @Column({ name: 'contact_id', type: 'uuid' })
   contactId: string;
 
-  @Column({ name: 'sector_id', nullable: true })
+  @Column({ name: 'sector_id', type: 'uuid', nullable: true })
   sectorId: string;
 
-  @Column({ name: 'remote_jid', length: 255, nullable: true })
+  @Column({ name: 'remote_jid', type: 'varchar', length: 255, nullable: true })
   remoteJid: string;
 
-  @Column({ name: 'contact_phone', nullable: true })
+  @Column({ name: 'contact_phone', type: 'varchar', nullable: true })
   contactPhone: string;
 
-  @Column({ name: 'conversation_mode', default: 'ai', nullable: true })
+  @Column({ name: 'conversation_mode', type: 'varchar', default: 'ai', nullable: true })
   conversationMode: string;
 
-  @Column({ length: 50, default: 'active', nullable: true })
+  @Column({ type: 'varchar', length: 50, default: 'active', nullable: true })
   status: string;
 
   @Column({ name: 'last_message_at', type: 'timestamptz', nullable: true })
@@ -36,10 +36,10 @@ export class WhatsappConversation {
   @Column({ name: 'last_message_preview', type: 'text', nullable: true })
   lastMessagePreview: string;
 
-  @Column({ name: 'unread_count', default: 0, nullable: true })
+  @Column({ name: 'unread_count', type: 'int', default: 0, nullable: true })
   unreadCount: number;
 
-  @Column({ name: 'assigned_to', nullable: true })
+  @Column({ name: 'assigned_to', type: 'uuid', nullable: true })
   assignedTo: string;
 
   @Column({ type: 'jsonb', default: {} })

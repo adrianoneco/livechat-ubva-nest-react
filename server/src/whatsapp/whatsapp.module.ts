@@ -2,6 +2,7 @@ import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { WhatsappService } from './whatsapp.service';
 import { WhatsappController } from './whatsapp.controller';
+import { BaileysService } from './baileys.service';
 import {
   WhatsappInstance,
   WhatsappInstanceSecret,
@@ -24,8 +25,8 @@ import { WebsocketModule } from '../websocket/websocket.module';
     ]),
     forwardRef(() => WebsocketModule),
   ],
-  providers: [WhatsappService],
+  providers: [WhatsappService, BaileysService],
   controllers: [WhatsappController],
-  exports: [WhatsappService],
+  exports: [WhatsappService, BaileysService],
 })
 export class WhatsappModule {}

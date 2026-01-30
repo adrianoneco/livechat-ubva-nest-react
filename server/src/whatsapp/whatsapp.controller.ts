@@ -1,7 +1,6 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, Request, All, Req, Res } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Query, UseGuards, Request } from '@nestjs/common';
 import { WhatsappService } from './whatsapp.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { Response } from 'express';
 
 @Controller('whatsapp')
 export class WhatsappController {
@@ -107,19 +106,76 @@ export class WhatsappController {
     return this.whatsappService.useMacro(macroId);
   }
 
-  // Webhook endpoint (no auth)
-  @All('webhooks/:instanceName')
-  async handleWebhook(
-    @Param('instanceName') instanceName: string,
-    @Body() body: any,
-    @Res() res: Response,
+  // Connect instance (get QR code / reconnect)
+  @Post('instances/:instanceId/connect')
+  @UseGuards(JwtAuthGuard)
+  async connectInstance(@Param('instanceId') instanceId: string) {
+    return this.whatsappService.connectInstance(instanceId);
+  }
+
+  // Disconnect instance (keep credentials)
+  @Post('instances/:instanceId/disconnect')
+  @UseGuards(JwtAuthGuard)
+  async disconnectInstance(@Param('instanceId') instanceId: string) {
+    return this.whatsappService.disconnectInstance(instanceId);
+  }
+
+  // Check if number is on WhatsApp
+  @Get('instances/:instanceId/check-number/:phoneNumber')
+  @UseGuards(JwtAuthGuard)
+  async checkNumber(
+    @Param('instanceId') instanceId: string,
+    @Param('phoneNumber') phoneNumber: string,
   ) {
-    try {
-      const result = await this.whatsappService.handleWebhook(instanceName, body);
-      return res.json(result);
-    } catch (error) {
-      console.error('[webhook] Error:', error);
-      return res.status(200).json({ received: true, error: String(error) });
-    }
+    return this.whatsappService.checkNumber(instanceId, phoneNumber);
+  }
+
+  // Get profile picture
+  @Get('instances/:instanceId/profile-picture/:phoneNumber')
+  @UseGuards(JwtAuthGuard)
+  async getProfilePicture(
+    @Param('instanceId') instanceId: string,
+    @Param('phoneNumber') phoneNumber: string,
+  ) {
+    return this.whatsappService.getProfilePicture(instanceId, phoneNumber);
+  }
+
+  // Send reaction
+  @Post('messages/:messageId/reaction')
+  @UseGuards(JwtAuthGuard)
+  async sendReaction(
+    @Param('messageId') messageId: string,
+    @Body() body: { conversationId: string; emoji: string },
+  ) {
+    return this.whatsappService.sendReaction(body.conversationId, messageId, body.emoji);
+  }
+
+  // Mark messages as read
+  @Post('conversations/:conversationId/read')
+  @UseGuards(JwtAuthGuard)
+  async markAsRead(
+    @Param('conversationId') conversationId: string,
+    @Body() body?: { messageIds?: string[] },
+  ) {
+    return this.whatsappService.markAsRead(conversationId, body?.messageIds);
+  }
+
+  // Group management
+  @Get('instances/:instanceId/groups/:groupJid')
+  @UseGuards(JwtAuthGuard)
+  async getGroupMetadata(
+    @Param('instanceId') instanceId: string,
+    @Param('groupJid') groupJid: string,
+  ) {
+    return this.whatsappService.getGroupMetadata(instanceId, groupJid);
+  }
+
+  @Post('instances/:instanceId/groups')
+  @UseGuards(JwtAuthGuard)
+  async createGroup(
+    @Param('instanceId') instanceId: string,
+    @Body() body: { name: string; participants: string[] },
+  ) {
+    return this.whatsappService.createGroup(instanceId, body.name, body.participants);
   }
 }

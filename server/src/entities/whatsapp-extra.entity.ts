@@ -6,19 +6,19 @@ export class WhatsappConversationNote {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'conversation_id' })
+  @Column({ name: 'conversation_id', type: 'uuid' })
   conversationId: string;
 
-  @Column({ name: 'contact_id', nullable: true })
+  @Column({ name: 'contact_id', type: 'uuid', nullable: true })
   contactId: string;
 
-  @Column({ name: 'current_sentiment', nullable: true })
+  @Column({ name: 'current_sentiment', type: 'varchar', nullable: true })
   currentSentiment: string;
 
-  @Column({ name: 'conversation_mode', default: 'ai', nullable: true })
+  @Column({ name: 'conversation_mode', type: 'varchar', default: 'ai', nullable: true })
   conversationMode: string;
 
-  @Column({ name: 'assigned_to', nullable: true })
+  @Column({ name: 'assigned_to', type: 'uuid', nullable: true })
   assignedTo: string;
 
   @Column({ name: 'last_message_at', type: 'timestamptz', nullable: true })
@@ -39,13 +39,13 @@ export class WhatsappSentimentAnalysis {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'conversation_id' })
+  @Column({ name: 'conversation_id', type: 'uuid' })
   conversationId: string;
 
-  @Column({ name: 'message_id', nullable: true })
+  @Column({ name: 'message_id', type: 'uuid', nullable: true })
   messageId: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   sentiment: string;
 
   @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true })
@@ -63,10 +63,10 @@ export class WhatsappSentimentHistory {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'conversation_id' })
+  @Column({ name: 'conversation_id', type: 'uuid' })
   conversationId: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   sentiment: string;
 
   @Column({ type: 'decimal', precision: 5, scale: 2, nullable: true })
@@ -81,7 +81,7 @@ export class WhatsappConversationSummary {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'conversation_id' })
+  @Column({ name: 'conversation_id', type: 'uuid' })
   conversationId: string;
 
   @Column({ type: 'text', nullable: true })
@@ -105,13 +105,13 @@ export class WhatsappReaction {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'message_id' })
+  @Column({ name: 'message_id', type: 'uuid' })
   messageId: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', nullable: true })
   emoji: string;
 
-  @Column({ name: 'from_jid', nullable: true })
+  @Column({ name: 'from_jid', type: 'varchar', nullable: true })
   fromJid: string;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })

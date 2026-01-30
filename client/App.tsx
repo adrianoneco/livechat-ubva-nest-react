@@ -6,11 +6,9 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { WebSocketProvider } from "@/contexts/WebSocketContext";
-import { PWAProvider } from "@/contexts/PWAContext";
 import { ProtectedRoute } from "@/components/auth";
 import { AdminRoute } from "@/components/auth/AdminRoute";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { OfflineBanner, UpdateBanner, InstallPrompt } from "@/components/pwa";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
@@ -33,17 +31,13 @@ const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <PWAProvider>
-          <AuthProvider>
-            <WebSocketProvider>
-              <NotificationProvider>
-                <TooltipProvider>
-                  <Toaster />
-                  <Sonner />
-                  <OfflineBanner />
-                  <UpdateBanner />
-                  <InstallPrompt />
-                  <ErrorBoundary>
+        <AuthProvider>
+          <WebSocketProvider>
+            <NotificationProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <ErrorBoundary>
                   <Routes>
                     <Route path="/auth" element={<Auth />} />
                     <Route path="/reset-password" element={<ResetPassword />} />
@@ -150,9 +144,8 @@ const App = () => {
             </NotificationProvider>
           </WebSocketProvider>
         </AuthProvider>
-      </PWAProvider>
-    </BrowserRouter>
-  </QueryClientProvider>
+      </BrowserRouter>
+    </QueryClientProvider>
   );
 };
 

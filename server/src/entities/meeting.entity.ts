@@ -5,16 +5,16 @@ export class Meeting {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'lead_id', nullable: true })
+  @Column({ name: 'lead_id', type: 'uuid', nullable: true })
   leadId: string;
 
-  @Column({ name: 'contact_id', nullable: true })
+  @Column({ name: 'contact_id', type: 'uuid', nullable: true })
   contactId: string;
 
-  @Column({ name: 'conversation_id', nullable: true })
+  @Column({ name: 'conversation_id', type: 'uuid', nullable: true })
   conversationId: string;
 
-  @Column({ length: 255 })
+  @Column({ type: 'varchar', length: 255 })
   title: string;
 
   @Column({ type: 'text', nullable: true })
@@ -23,22 +23,22 @@ export class Meeting {
   @Column({ name: 'scheduled_at', type: 'timestamp' })
   scheduledAt: Date;
 
-  @Column({ default: 60 })
+  @Column({ type: 'int', default: 60 })
   duration: number;
 
-  @Column({ length: 255, nullable: true })
+  @Column({ type: 'varchar', length: 255, nullable: true })
   location: string;
 
   @Column({ name: 'meeting_url', type: 'text', nullable: true })
   meetingUrl: string;
 
-  @Column({ length: 50, default: 'scheduled' })
+  @Column({ type: 'varchar', length: 50, default: 'scheduled' })
   status: string;
 
   @Column({ type: 'jsonb', nullable: true })
   attendees: any;
 
-  @Column({ name: 'reminder_sent', default: false, nullable: true })
+  @Column({ name: 'reminder_sent', type: 'boolean', default: false, nullable: true })
   reminderSent: boolean;
 
   @Column({ name: 'reminder_sent_at', type: 'timestamp', nullable: true })
@@ -47,7 +47,7 @@ export class Meeting {
   @Column({ type: 'text', nullable: true })
   notes: string;
 
-  @Column({ name: 'created_by' })
+  @Column({ name: 'created_by', type: 'uuid' })
   createdBy: string;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamp' })

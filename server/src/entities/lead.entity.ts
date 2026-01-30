@@ -6,10 +6,10 @@ export class Lead {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'contact_id', nullable: true })
+  @Column({ name: 'contact_id', type: 'uuid', nullable: true })
   contactId: string;
 
-  @Column({ name: 'conversation_id', nullable: true })
+  @Column({ name: 'conversation_id', type: 'uuid', nullable: true })
   conversationId: string;
 
   @Column({ type: 'text' })
@@ -24,22 +24,22 @@ export class Lead {
   @Column({ type: 'text', nullable: true })
   company: string;
 
-  @Column({ default: 'new' })
+  @Column({ type: 'varchar', default: 'new' })
   status: string;
 
-  @Column({ default: 'whatsapp' })
+  @Column({ type: 'varchar', default: 'whatsapp' })
   source: string;
 
   @Column({ type: 'numeric', precision: 12, scale: 2, default: 0, nullable: true })
   value: number;
 
-  @Column({ default: 0, nullable: true })
+  @Column({ type: 'int', default: 0, nullable: true })
   probability: number;
 
   @Column({ name: 'expected_close_date', type: 'date', nullable: true })
   expectedCloseDate: Date;
 
-  @Column({ name: 'assigned_to', nullable: true })
+  @Column({ name: 'assigned_to', type: 'uuid', nullable: true })
   assignedTo: string;
 
   @Column({ type: 'text', nullable: true })
@@ -54,7 +54,7 @@ export class Lead {
   @Column({ name: 'pipeline_insight', type: 'jsonb', default: {}, nullable: true })
   pipelineInsight: any;
 
-  @Column({ name: 'qualification_score', nullable: true })
+  @Column({ name: 'qualification_score', type: 'int', nullable: true })
   qualificationScore: number;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
@@ -79,10 +79,10 @@ export class LeadActivity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'lead_id' })
+  @Column({ name: 'lead_id', type: 'uuid' })
   leadId: string;
 
-  @Column({ name: 'user_id', nullable: true })
+  @Column({ name: 'user_id', type: 'uuid', nullable: true })
   userId: string;
 
   @Column({ name: 'activity_type', type: 'text', nullable: true })
@@ -97,7 +97,7 @@ export class LeadActivity {
   @Column({ type: 'text', nullable: true })
   outcome: string;
 
-  @Column({ name: 'performed_by', nullable: true })
+  @Column({ name: 'performed_by', type: 'uuid', nullable: true })
   performedBy: string;
 
   @Column({ name: 'scheduled_for', type: 'timestamp', nullable: true })
@@ -125,7 +125,7 @@ export class LeadStatusHistory {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'lead_id' })
+  @Column({ name: 'lead_id', type: 'uuid' })
   leadId: string;
 
   @Column({ name: 'old_status', type: 'text', nullable: true })
@@ -134,7 +134,7 @@ export class LeadStatusHistory {
   @Column({ name: 'new_status', type: 'text' })
   newStatus: string;
 
-  @Column({ name: 'changed_by', nullable: true })
+  @Column({ name: 'changed_by', type: 'uuid', nullable: true })
   changedBy: string;
 
   @Column({ type: 'text', nullable: true })

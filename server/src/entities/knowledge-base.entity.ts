@@ -5,10 +5,10 @@ export class KnowledgeBase {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'sector_id', nullable: true })
+  @Column({ name: 'sector_id', type: 'uuid', nullable: true })
   sectorId: string;
 
-  @Column({ length: 100 })
+  @Column({ type: 'varchar', length: 100 })
   category: string;
 
   @Column({ type: 'text' })
@@ -20,19 +20,19 @@ export class KnowledgeBase {
   @Column({ type: 'jsonb', nullable: true })
   keywords: any;
 
-  @Column({ name: 'use_count', default: 0, nullable: true })
+  @Column({ name: 'use_count', type: 'int', default: 0, nullable: true })
   useCount: number;
 
   @Column({ name: 'last_used_at', type: 'timestamp', nullable: true })
   lastUsedAt: Date;
 
-  @Column({ name: 'is_active', default: true, nullable: true })
+  @Column({ name: 'is_active', type: 'boolean', default: true, nullable: true })
   isActive: boolean;
 
-  @Column({ default: 0, nullable: true })
+  @Column({ type: 'int', default: 0, nullable: true })
   priority: number;
 
-  @Column({ name: 'created_by' })
+  @Column({ name: 'created_by', type: 'uuid' })
   createdBy: string;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamp' })

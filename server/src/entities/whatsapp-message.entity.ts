@@ -7,43 +7,43 @@ export class WhatsappMessage {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'conversation_id' })
+  @Column({ name: 'conversation_id', type: 'uuid' })
   conversationId: string;
 
-  @Column({ name: 'remote_jid', length: 255 })
+  @Column({ name: 'remote_jid', type: 'varchar', length: 255 })
   remoteJid: string;
 
-  @Column({ name: 'message_id', length: 255, unique: true })
+  @Column({ name: 'message_id', type: 'varchar', length: 255, unique: true })
   messageId: string;
 
   @Column({ type: 'text' })
   content: string;
 
-  @Column({ name: 'message_type', length: 50, default: 'text', nullable: true })
+  @Column({ name: 'message_type', type: 'varchar', length: 50, default: 'text', nullable: true })
   messageType: string;
 
   @Column({ name: 'media_url', type: 'text', nullable: true })
   mediaUrl: string;
 
-  @Column({ name: 'media_mimetype', length: 100, nullable: true })
+  @Column({ name: 'media_mimetype', type: 'varchar', length: 100, nullable: true })
   mediaMimetype: string;
 
   @Column({ name: 'media_filename', type: 'text', nullable: true })
   mediaFilename: string;
 
-  @Column({ name: 'is_from_me', default: false, nullable: true })
+  @Column({ name: 'is_from_me', type: 'boolean', default: false, nullable: true })
   isFromMe: boolean;
 
-  @Column({ name: 'is_internal', default: false, nullable: true })
+  @Column({ name: 'is_internal', type: 'boolean', default: false, nullable: true })
   isInternal: boolean;
 
-  @Column({ name: 'is_supervisor_message', default: false, nullable: true })
+  @Column({ name: 'is_supervisor_message', type: 'boolean', default: false, nullable: true })
   isSupervisorMessage: boolean;
 
-  @Column({ length: 50, default: 'sent', nullable: true })
+  @Column({ type: 'varchar', length: 50, default: 'sent', nullable: true })
   status: string;
 
-  @Column({ name: 'quoted_message_id', length: 255, nullable: true })
+  @Column({ name: 'quoted_message_id', type: 'varchar', length: 255, nullable: true })
   quotedMessageId: string;
 
   @Column({ type: 'timestamptz' })
@@ -58,19 +58,19 @@ export class WhatsappMessage {
   @Column({ name: 'audio_transcription', type: 'text', nullable: true })
   audioTranscription: string;
 
-  @Column({ name: 'transcription_status', length: 20, nullable: true })
+  @Column({ name: 'transcription_status', type: 'varchar', length: 20, nullable: true })
   transcriptionStatus: string;
 
-  @Column({ name: 'sent_by', nullable: true })
+  @Column({ name: 'sent_by', type: 'uuid', nullable: true })
   sentBy: string;
 
-  @Column({ default: false, nullable: true })
+  @Column({ type: 'boolean', default: false, nullable: true })
   deleted: boolean;
 
   @Column({ name: 'deleted_at', type: 'timestamptz', nullable: true })
   deletedAt: Date;
 
-  @Column({ name: 'deleted_by', nullable: true })
+  @Column({ name: 'deleted_by', type: 'uuid', nullable: true })
   deletedBy: string;
 
   @Column({ name: 'read_participants', type: 'jsonb', default: [], nullable: true })

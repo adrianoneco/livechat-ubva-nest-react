@@ -12,28 +12,28 @@ export class SlaViolation {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'conversation_id', nullable: true })
+  @Column({ name: 'conversation_id', type: 'uuid', nullable: true })
   conversationId: string;
 
-  @Column({ name: 'ticket_id', nullable: true })
+  @Column({ name: 'ticket_id', type: 'uuid', nullable: true })
   ticketId: string;
 
-  @Column({ name: 'sla_config_id', nullable: true })
+  @Column({ name: 'sla_config_id', type: 'uuid', nullable: true })
   slaConfigId: string;
 
-  @Column({ name: 'violation_type' })
+  @Column({ name: 'violation_type', type: 'varchar' })
   violationType: string;
 
-  @Column({ name: 'expected_time_minutes', nullable: true })
+  @Column({ name: 'expected_time_minutes', type: 'int', nullable: true })
   expectedTimeMinutes: number;
 
-  @Column({ name: 'actual_time_minutes', nullable: true })
+  @Column({ name: 'actual_time_minutes', type: 'int', nullable: true })
   actualTimeMinutes: number;
 
-  @Column({ default: false, nullable: true })
+  @Column({ type: 'boolean', default: false, nullable: true })
   acknowledged: boolean;
 
-  @Column({ name: 'acknowledged_by', nullable: true })
+  @Column({ name: 'acknowledged_by', type: 'uuid', nullable: true })
   acknowledgedBy: string;
 
   @Column({ name: 'acknowledged_at', type: 'timestamptz', nullable: true })

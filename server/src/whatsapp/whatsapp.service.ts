@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Inject, forwardRef, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import {
@@ -10,10 +10,11 @@ import {
   WhatsappMacro,
 } from '../entities';
 import { WebsocketGateway } from '../websocket/websocket.gateway';
+import { BaileysService } from './baileys.service';
 import * as crypto from 'crypto';
 
 @Injectable()
-export class WhatsappService {
+export class WhatsappService implements OnModuleInit {
   constructor(
     @InjectRepository(WhatsappInstance)
     private instanceRepository: Repository<WhatsappInstance>,
@@ -30,18 +31,71 @@ export class WhatsappService {
     private dataSource: DataSource,
     @Inject(forwardRef(() => WebsocketGateway))
     private wsGateway: WebsocketGateway,
+    private baileysService: BaileysService,
   ) {}
+
+  async onModuleInit() {
+    // Register event handlers for all existing instances
+    const instances = await this.instanceRepository.find();
+    for (const instance of instances) {
+      this.registerBaileysEventHandler(instance.instanceName);
+    }
+  }
+
+  /**
+   * Register Baileys event handler for an instance
+   */
+  private registerBaileysEventHandler(instanceName: string) {
+    this.baileysService.registerEventHandler(instanceName, async (event, data) => {
+      await this.handleBaileysEvent(instanceName, event, data);
+    });
+  }
+
+  /**
+   * Handle events from Baileys
+   */
+  private async handleBaileysEvent(instanceName: string, event: string, data: any) {
+    switch (event) {
+      case 'qr':
+        this.wsGateway.sendToAll('whatsapp:qr', { instanceName, qr: data.qr });
+        break;
+      case 'connection.update':
+        const instance = await this.instanceRepository.findOne({ where: { instanceName } });
+        if (instance) {
+          this.wsGateway.instanceStatusChanged(instance.id, data.state);
+        }
+        break;
+      case 'messages.upsert':
+        await this.handleIncomingMessage(instanceName, data);
+        break;
+      case 'messages.update':
+        await this.handleMessageUpdate(instanceName, data);
+        break;
+      case 'message-receipt.update':
+        await this.handleMessageReceipt(instanceName, data);
+        break;
+    }
+  }
 
   // Instance Management
   async getInstances() {
     const instances = await this.instanceRepository.find();
-    return instances;
+    
+    // Enrich with Baileys status
+    return instances.map(instance => ({
+      ...instance,
+      connectionStatus: this.baileysService.getSessionStatus(instance.instanceName),
+    }));
   }
 
   async getInstance(instanceId: string) {
     const instance = await this.instanceRepository.findOne({ where: { id: instanceId } });
     if (!instance) throw new NotFoundException('Instance not found');
-    return instance;
+    
+    return {
+      ...instance,
+      connectionStatus: this.baileysService.getSessionStatus(instance.instanceName),
+    };
   }
 
   async createInstance(data: any) {
@@ -49,18 +103,11 @@ export class WhatsappService {
       name: data.name,
       instanceName: data.instanceName,
       status: 'disconnected',
-      providerType: data.providerType || 'self_hosted',
-      instanceIdExternal: data.instanceIdExternal,
+      providerType: 'baileys',
     });
 
-    if (data.apiKey && data.apiUrl) {
-      await this.secretsRepository.save({
-        instanceId: instance.id,
-        apiKey: data.apiKey,
-        apiUrl: data.apiUrl,
-        providerType: data.providerType || 'self_hosted',
-      });
-    }
+    // Register event handler
+    this.registerBaileysEventHandler(instance.instanceName);
 
     return { success: true, instance };
   }
@@ -71,8 +118,25 @@ export class WhatsappService {
   }
 
   async deleteInstance(instanceId: string) {
+    const instance = await this.instanceRepository.findOne({ where: { id: instanceId } });
+    if (instance) {
+      // Disconnect and cleanup Baileys session
+      await this.baileysService.logout(instance.instanceName);
+      this.baileysService.unregisterEventHandler(instance.instanceName);
+    }
     await this.instanceRepository.delete(instanceId);
     return { success: true };
+  }
+
+  // Connect instance (get QR code)
+  async connectInstance(instanceId: string) {
+    const instance = await this.instanceRepository.findOne({ where: { id: instanceId } });
+    if (!instance) throw new NotFoundException('Instance not found');
+
+    // Create or reconnect Baileys session
+    const result = await this.baileysService.createSession(instance.instanceName, instance.id);
+    
+    return result;
   }
 
   // Contacts
@@ -131,63 +195,76 @@ export class WhatsappService {
     const instance = await this.instanceRepository.findOne({ where: { id: conv.instance_id } });
     if (!instance) throw new NotFoundException('Instance not found');
 
-    const secrets = await this.secretsRepository.findOne({ where: { instanceId: instance.id } });
-    if (!secrets) throw new NotFoundException('Instance secrets not found');
-
     let finalContent = data.content || '';
     if (data.templateContext) {
       finalContent = this.replaceTemplateVariables(finalContent, data.templateContext);
     }
 
-    // Send to Evolution API
-    const evolutionPayload: any = { number: destNumber, text: finalContent };
-    if (data.messageType !== 'text' && data.mediaUrl) {
-      evolutionPayload.mediaUrl = data.mediaUrl;
-    }
-    if (data.quotedMessageId) {
-      evolutionPayload.quoted = { key: { id: data.quotedMessageId } };
-    }
-
-    const providerType = secrets.providerType || 'self_hosted';
-    const instanceIdentifier = providerType === 'cloud' && instance.instanceIdExternal
-      ? instance.instanceIdExternal
-      : instance.instanceName;
-
-    let endpoint = data.messageType === 'text' || !data.mediaUrl
-      ? `${secrets.apiUrl}/message/sendText/${instanceIdentifier}`
-      : `${secrets.apiUrl}/message/sendMedia/${instanceIdentifier}`;
-
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (providerType === 'cloud') {
-      headers['Authorization'] = `Bearer ${secrets.apiKey}`;
-    } else {
-      headers['apikey'] = secrets.apiKey;
-    }
-
     try {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(evolutionPayload),
-      });
+      let result: any;
+      const messageType = data.messageType || 'text';
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[whatsapp/send] Evolution API error:', errorText);
-        throw new BadRequestException('Failed to send message to WhatsApp');
+      // Send via Baileys
+      if (messageType === 'text' || !data.mediaUrl) {
+        result = await this.baileysService.sendTextMessage(
+          instance.instanceName,
+          destNumber,
+          finalContent,
+          data.quotedMessageId
+        );
+      } else if (messageType === 'location' && data.latitude && data.longitude) {
+        result = await this.baileysService.sendLocationMessage(
+          instance.instanceName,
+          destNumber,
+          data.latitude,
+          data.longitude,
+          data.locationName
+        );
+      } else if (messageType === 'contact' && data.contactName && data.contactNumber) {
+        result = await this.baileysService.sendContactMessage(
+          instance.instanceName,
+          destNumber,
+          data.contactName,
+          data.contactNumber
+        );
+      } else if (data.mediaUrl) {
+        const mediaTypeMap: Record<string, 'image' | 'video' | 'audio' | 'document'> = {
+          image: 'image',
+          video: 'video',
+          audio: 'audio',
+          document: 'document',
+          file: 'document',
+        };
+        
+        const baileysMediaType = mediaTypeMap[messageType] || 'document';
+        result = await this.baileysService.sendMediaMessage(
+          instance.instanceName,
+          destNumber,
+          baileysMediaType,
+          data.mediaUrl,
+          finalContent,
+          data.fileName,
+          data.mediaMimetype
+        );
+      } else {
+        result = await this.baileysService.sendTextMessage(
+          instance.instanceName,
+          destNumber,
+          finalContent,
+          data.quotedMessageId
+        );
       }
 
-      const result = await response.json();
-      const evolutionMessageId = result.key?.id || crypto.randomUUID();
+      const baileysMessageId = result?.key?.id || crypto.randomUUID();
 
       // Save message to database
       const remoteJid = isGroup ? contactRemoteJid : `${destNumber}@s.whatsapp.net`;
       const message = await this.messageRepository.save({
         conversationId,
         remoteJid,
-        messageId: evolutionMessageId,
+        messageId: baileysMessageId,
         content: finalContent,
-        messageType: data.messageType || 'text',
+        messageType: messageType,
         mediaUrl: data.mediaUrl,
         mediaMimetype: data.mediaMimetype,
         mediaFilename: data.fileName,
@@ -208,11 +285,70 @@ export class WhatsappService {
       // Emit WebSocket event
       this.wsGateway.messageCreated(conversationId, message);
 
-      return { success: true, message, evolutionMessageId };
+      return { success: true, message, messageId: baileysMessageId };
     } catch (error: any) {
       console.error('[whatsapp/send] Error:', error);
       throw new BadRequestException(error.message || 'Failed to send message');
     }
+  }
+
+  /**
+   * Send reaction to a message
+   */
+  async sendReaction(conversationId: string, messageId: string, emoji: string) {
+    const message = await this.messageRepository.findOne({ where: { id: messageId } });
+    if (!message) throw new NotFoundException('Message not found');
+
+    const conversation = await this.conversationRepository.findOne({ 
+      where: { id: conversationId },
+    });
+    if (!conversation) throw new NotFoundException('Conversation not found');
+
+    const instance = await this.instanceRepository.findOne({ where: { id: conversation.instanceId } });
+    if (!instance) throw new NotFoundException('Instance not found');
+
+    await this.baileysService.sendReaction(
+      instance.instanceName,
+      message.remoteJid,
+      message.messageId,
+      emoji
+    );
+
+    return { success: true };
+  }
+
+  /**
+   * Mark messages as read
+   */
+  async markAsRead(conversationId: string, messageIds?: string[]) {
+    const conversation = await this.conversationRepository.findOne({ where: { id: conversationId } });
+    if (!conversation) throw new NotFoundException('Conversation not found');
+
+    const instance = await this.instanceRepository.findOne({ where: { id: conversation.instanceId } });
+    if (!instance) throw new NotFoundException('Instance not found');
+
+    let targetMessageIds = messageIds;
+    if (!targetMessageIds || targetMessageIds.length === 0) {
+      // Mark all unread messages
+      const unreadMessages = await this.messageRepository.find({
+        where: { conversationId, isFromMe: false, status: 'received' },
+        select: ['messageId'],
+      });
+      targetMessageIds = unreadMessages.map(m => m.messageId);
+    }
+
+    if (targetMessageIds.length > 0) {
+      await this.baileysService.markAsRead(
+        instance.instanceName,
+        conversation.remoteJid,
+        targetMessageIds
+      );
+    }
+
+    // Update database
+    await this.conversationRepository.update(conversationId, { unreadCount: 0 });
+
+    return { success: true };
   }
 
   private replaceTemplateVariables(content: string, context: any): string {
@@ -256,69 +392,40 @@ export class WhatsappService {
     return { success: true };
   }
 
-  // Webhook handling
-  async handleWebhook(instanceName: string, body: any) {
-    console.log('[webhook] Received from instance:', instanceName);
-    
-    const eventType = body.event || body.type || Object.keys(body)[0];
-    const data = body.data || body[eventType] || body;
-
-    switch (eventType) {
-      case 'messages.upsert':
-      case 'message':
-        return this.handleIncomingMessage(instanceName, data);
-      case 'messages.update':
-        return this.handleMessageUpdate(instanceName, data);
-      case 'connection.update':
-        return this.handleConnectionUpdate(instanceName, data);
-      default:
-        console.log('[webhook] Unknown event type:', eventType);
-        return { received: true };
-    }
-  }
-
+  // Baileys Event Handlers
   private async handleIncomingMessage(instanceName: string, data: any) {
     try {
-      const messageData = Array.isArray(data) ? data[0] : data;
-      const key = messageData.key || {};
-      const message = messageData.message || {};
-      
+      const key = data.key || {};
       const remoteJid = key.remoteJid;
       const messageId = key.id;
       const isFromMe = key.fromMe || false;
       
       if (!remoteJid || !messageId) {
-        return { received: true, skipped: 'missing_data' };
+        return;
       }
 
       // Find instance
       const instance = await this.instanceRepository.findOne({ where: { instanceName } });
       if (!instance) {
-        console.warn('[webhook] Instance not found:', instanceName);
-        return { received: true, skipped: 'instance_not_found' };
+        console.warn('[baileys] Instance not found:', instanceName);
+        return;
       }
 
-      // Get content
-      let content = message.conversation || 
-                   message.extendedTextMessage?.text ||
-                   message.imageMessage?.caption ||
-                   message.videoMessage?.caption ||
-                   message.documentMessage?.caption ||
-                   '';
-      
-      const messageType = this.getMessageType(message);
+      // Get content from data
+      const content = data.content || '';
+      const messageType = data.messageType || 'text';
 
       // Find or create contact and conversation
       const { contact, conversation } = await this.findOrCreateContactAndConversation(
         instance.id,
         remoteJid,
-        messageData
+        { pushName: data.pushName }
       );
 
       // Check for duplicate message
       const existingMessage = await this.messageRepository.findOne({ where: { messageId } });
       if (existingMessage) {
-        return { received: true, skipped: 'duplicate' };
+        return;
       }
 
       // Save message
@@ -328,10 +435,13 @@ export class WhatsappService {
         messageId,
         content,
         messageType,
+        mediaUrl: data.mediaUrl,
+        mediaMimetype: data.mediaMimetype,
+        mediaFilename: data.mediaFilename,
         isFromMe,
-        status: 'received',
-        timestamp: new Date(messageData.messageTimestamp * 1000 || Date.now()),
-        metadata: { raw: messageData },
+        status: isFromMe ? 'sent' : 'received',
+        timestamp: new Date(Number(data.messageTimestamp) * 1000 || Date.now()),
+        metadata: { raw: data.message },
       });
 
       // Update conversation
@@ -344,59 +454,66 @@ export class WhatsappService {
 
       // Emit WebSocket
       this.wsGateway.messageCreated(conversation.id, savedMessage);
-
-      return { success: true, messageId: savedMessage.id };
     } catch (error) {
-      console.error('[webhook] Error handling message:', error);
-      return { received: true, error: String(error) };
+      console.error('[baileys] Error handling message:', error);
     }
   }
 
   private async handleMessageUpdate(instanceName: string, data: any) {
     try {
-      const updates = Array.isArray(data) ? data : [data];
+      const messageId = data.key?.id;
+      const status = data.update?.status;
       
-      for (const update of updates) {
-        const messageId = update.key?.id;
-        const status = update.status?.toLowerCase?.() || update.update?.status;
+      if (messageId && status) {
+        const statusMap: Record<number, string> = {
+          0: 'error',
+          1: 'pending',
+          2: 'sent',
+          3: 'delivered',
+          4: 'read',
+          5: 'played',
+        };
         
-        if (messageId && status) {
-          await this.messageRepository.update({ messageId }, { status });
-          
-          const message = await this.messageRepository.findOne({ where: { messageId } });
-          if (message) {
-            this.wsGateway.messageStatusChanged(message.conversationId, message.id, status);
-          }
+        const statusStr = typeof status === 'number' ? statusMap[status] || 'unknown' : status;
+        
+        await this.messageRepository.update({ messageId }, { status: statusStr });
+        
+        const message = await this.messageRepository.findOne({ where: { messageId } });
+        if (message) {
+          this.wsGateway.messageStatusChanged(message.conversationId, message.id, statusStr);
         }
       }
-
-      return { received: true };
     } catch (error) {
-      console.error('[webhook] Error updating message:', error);
-      return { received: true, error: String(error) };
+      console.error('[baileys] Error updating message:', error);
     }
   }
 
-  private async handleConnectionUpdate(instanceName: string, data: any) {
-    const instance = await this.instanceRepository.findOne({ where: { instanceName } });
-    if (!instance) return { received: true };
+  private async handleMessageReceipt(instanceName: string, data: any) {
+    try {
+      const keys = data.keys || [];
+      const type = data.type;
+      
+      const statusMap: Record<string, string> = {
+        'read': 'read',
+        'read-self': 'read',
+        'delivered': 'delivered',
+      };
+      
+      const status = statusMap[type];
+      if (!status) return;
 
-    const status = data.state || data.status || 'unknown';
-    await this.instanceRepository.update(instance.id, { status });
-    this.wsGateway.instanceStatusChanged(instance.id, status);
-
-    return { received: true };
-  }
-
-  private getMessageType(message: any): string {
-    if (message.imageMessage) return 'image';
-    if (message.videoMessage) return 'video';
-    if (message.audioMessage) return 'audio';
-    if (message.documentMessage) return 'document';
-    if (message.stickerMessage) return 'sticker';
-    if (message.locationMessage) return 'location';
-    if (message.contactMessage) return 'contact';
-    return 'text';
+      for (const key of keys) {
+        const messageId = key.id;
+        await this.messageRepository.update({ messageId }, { status });
+        
+        const message = await this.messageRepository.findOne({ where: { messageId } });
+        if (message) {
+          this.wsGateway.messageStatusChanged(message.conversationId, message.id, status);
+        }
+      }
+    } catch (error) {
+      console.error('[baileys] Error handling receipt:', error);
+    }
   }
 
   private async findOrCreateContactAndConversation(instanceId: string, remoteJid: string, messageData: any) {
@@ -441,112 +558,80 @@ export class WhatsappService {
     return { contact, conversation };
   }
 
-  // Instance API actions
+  // Instance API actions (now using Baileys directly)
   async getInstanceQR(instanceId: string) {
     const instance = await this.instanceRepository.findOne({ where: { id: instanceId } });
     if (!instance) throw new NotFoundException('Instance not found');
 
-    const secrets = await this.secretsRepository.findOne({ where: { instanceId: instance.id } });
-    if (!secrets) throw new NotFoundException('Instance secrets not found');
-
-    const providerType = secrets.providerType || 'self_hosted';
-    const instanceIdentifier = providerType === 'cloud' && instance.instanceIdExternal
-      ? instance.instanceIdExternal
-      : instance.instanceName;
-
-    const headers: Record<string, string> = {};
-    if (providerType === 'cloud') {
-      headers['Authorization'] = `Bearer ${secrets.apiKey}`;
-    } else {
-      headers['apikey'] = secrets.apiKey;
+    // Connect and get QR from Baileys
+    const result = await this.baileysService.createSession(instance.instanceName, instance.id);
+    
+    if (result.qrCode) {
+      return { qr: result.qrCode, status: result.status };
     }
-
-    try {
-      const response = await fetch(`${secrets.apiUrl}/instance/connect/${instanceIdentifier}`, {
-        method: 'GET',
-        headers,
-      });
-
-      if (!response.ok) {
-        throw new BadRequestException('Failed to get QR code');
-      }
-
-      const result = await response.json();
-      return result;
-    } catch (error: any) {
-      throw new BadRequestException(error.message || 'Failed to get QR code');
-    }
+    
+    // If already connected, return status
+    const status = this.baileysService.getSessionStatus(instance.instanceName);
+    return { status: status.status };
   }
 
   async getInstanceStatus(instanceId: string) {
     const instance = await this.instanceRepository.findOne({ where: { id: instanceId } });
     if (!instance) throw new NotFoundException('Instance not found');
 
-    const secrets = await this.secretsRepository.findOne({ where: { instanceId: instance.id } });
-    if (!secrets) return { status: instance.status || 'disconnected' };
-
-    const providerType = secrets.providerType || 'self_hosted';
-    const instanceIdentifier = providerType === 'cloud' && instance.instanceIdExternal
-      ? instance.instanceIdExternal
-      : instance.instanceName;
-
-    const headers: Record<string, string> = {};
-    if (providerType === 'cloud') {
-      headers['Authorization'] = `Bearer ${secrets.apiKey}`;
-    } else {
-      headers['apikey'] = secrets.apiKey;
-    }
-
-    try {
-      const response = await fetch(`${secrets.apiUrl}/instance/connectionState/${instanceIdentifier}`, {
-        method: 'GET',
-        headers,
-      });
-
-      if (!response.ok) {
-        return { status: instance.status || 'disconnected' };
-      }
-
-      const result = await response.json();
-      const status = result.state || result.instance?.state || 'unknown';
-      
-      await this.instanceRepository.update(instanceId, { status });
-      
-      return { status, ...result };
-    } catch (error) {
-      return { status: instance.status || 'disconnected' };
-    }
+    const status = this.baileysService.getSessionStatus(instance.instanceName);
+    return { status: status.status, qrCode: status.qrCode };
   }
 
   async logoutInstance(instanceId: string) {
     const instance = await this.instanceRepository.findOne({ where: { id: instanceId } });
     if (!instance) throw new NotFoundException('Instance not found');
 
-    const secrets = await this.secretsRepository.findOne({ where: { instanceId: instance.id } });
-    if (!secrets) throw new NotFoundException('Instance secrets not found');
+    await this.baileysService.logout(instance.instanceName);
+    await this.instanceRepository.update(instanceId, { status: 'disconnected', qrCode: null });
+    
+    return { success: true };
+  }
 
-    const providerType = secrets.providerType || 'self_hosted';
-    const instanceIdentifier = providerType === 'cloud' && instance.instanceIdExternal
-      ? instance.instanceIdExternal
-      : instance.instanceName;
+  async disconnectInstance(instanceId: string) {
+    const instance = await this.instanceRepository.findOne({ where: { id: instanceId } });
+    if (!instance) throw new NotFoundException('Instance not found');
 
-    const headers: Record<string, string> = {};
-    if (providerType === 'cloud') {
-      headers['Authorization'] = `Bearer ${secrets.apiKey}`;
-    } else {
-      headers['apikey'] = secrets.apiKey;
-    }
+    await this.baileysService.disconnect(instance.instanceName);
+    
+    return { success: true };
+  }
 
-    try {
-      await fetch(`${secrets.apiUrl}/instance/logout/${instanceIdentifier}`, {
-        method: 'DELETE',
-        headers,
-      });
+  // Check if number is on WhatsApp
+  async checkNumber(instanceId: string, phoneNumber: string) {
+    const instance = await this.instanceRepository.findOne({ where: { id: instanceId } });
+    if (!instance) throw new NotFoundException('Instance not found');
 
-      await this.instanceRepository.update(instanceId, { status: 'disconnected', qrCode: null });
-      return { success: true };
-    } catch (error: any) {
-      throw new BadRequestException(error.message || 'Failed to logout');
-    }
+    const result = await this.baileysService.isOnWhatsApp(instance.instanceName, phoneNumber);
+    return result;
+  }
+
+  // Get profile picture
+  async getProfilePicture(instanceId: string, phoneNumber: string) {
+    const instance = await this.instanceRepository.findOne({ where: { id: instanceId } });
+    if (!instance) throw new NotFoundException('Instance not found');
+
+    const url = await this.baileysService.getProfilePicture(instance.instanceName, phoneNumber);
+    return { url };
+  }
+
+  // Group management
+  async getGroupMetadata(instanceId: string, groupJid: string) {
+    const instance = await this.instanceRepository.findOne({ where: { id: instanceId } });
+    if (!instance) throw new NotFoundException('Instance not found');
+
+    return this.baileysService.getGroupMetadata(instance.instanceName, groupJid);
+  }
+
+  async createGroup(instanceId: string, name: string, participants: string[]) {
+    const instance = await this.instanceRepository.findOne({ where: { id: instanceId } });
+    if (!instance) throw new NotFoundException('Instance not found');
+
+    return this.baileysService.createGroup(instance.instanceName, name, participants);
   }
 }

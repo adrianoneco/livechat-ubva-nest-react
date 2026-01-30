@@ -6,22 +6,22 @@ export class WhatsappInstanceSecret {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'instance_id' })
+  @Column({ name: 'instance_id', type: 'uuid' })
   instanceId: string;
 
-  @Column({ name: 'api_key' })
+  @Column({ name: 'api_key', type: 'text' })
   apiKey: string;
 
-  @Column({ name: 'api_url' })
+  @Column({ name: 'api_url', type: 'text' })
   apiUrl: string;
 
-  @Column({ name: 'webhook_endpoint', nullable: true })
+  @Column({ name: 'webhook_endpoint', type: 'text', nullable: true })
   webhookEndpoint: string;
 
-  @Column({ name: 'webhook_base64', nullable: true })
+  @Column({ name: 'webhook_base64', type: 'boolean', nullable: true })
   webhookBase64: boolean;
 
-  @Column({ name: 'provider_type', default: 'self_hosted', nullable: true })
+  @Column({ name: 'provider_type', type: 'varchar', default: 'self_hosted', nullable: true })
   providerType: string;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })

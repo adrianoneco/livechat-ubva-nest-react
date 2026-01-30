@@ -5,28 +5,28 @@ export class Escalation {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'conversation_id' })
+  @Column({ name: 'conversation_id', type: 'uuid' })
   conversationId: string;
 
-  @Column({ length: 100 })
+  @Column({ type: 'varchar', length: 100 })
   reason: string;
 
-  @Column({ name: 'escalation_keyword', length: 255, nullable: true })
+  @Column({ name: 'escalation_keyword', type: 'varchar', length: 255, nullable: true })
   escalationKeyword: string;
 
-  @Column({ name: 'original_agent_id', nullable: true })
+  @Column({ name: 'original_agent_id', type: 'uuid', nullable: true })
   originalAgentId: string;
 
-  @Column({ name: 'escalated_to', nullable: true })
+  @Column({ name: 'escalated_to', type: 'uuid', nullable: true })
   escalatedTo: string;
 
-  @Column({ name: 'escalation_type', length: 50, default: 'user' })
+  @Column({ name: 'escalation_type', type: 'varchar', length: 50, default: 'user' })
   escalationType: string;
 
-  @Column({ length: 50, default: 'pending' })
+  @Column({ type: 'varchar', length: 50, default: 'pending' })
   status: string;
 
-  @Column({ length: 50, default: 'medium', nullable: true })
+  @Column({ type: 'varchar', length: 50, default: 'medium', nullable: true })
   priority: string;
 
   @Column({ type: 'text', nullable: true })
@@ -35,7 +35,7 @@ export class Escalation {
   @Column({ name: 'resolved_at', type: 'timestamp', nullable: true })
   resolvedAt: Date;
 
-  @Column({ name: 'resolved_by', nullable: true })
+  @Column({ name: 'resolved_by', type: 'uuid', nullable: true })
   resolvedBy: string;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamp' })

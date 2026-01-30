@@ -6,7 +6,7 @@ export class WhatsappMacro {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'instance_id', nullable: true })
+  @Column({ name: 'instance_id', type: 'uuid', nullable: true })
   instanceId: string;
 
   @Column({ type: 'text' })
@@ -21,13 +21,13 @@ export class WhatsappMacro {
   @Column({ type: 'text', nullable: true })
   description: string;
 
-  @Column({ default: 'geral', nullable: true })
+  @Column({ type: 'varchar', default: 'geral', nullable: true })
   category: string;
 
-  @Column({ name: 'is_active', default: true, nullable: true })
+  @Column({ name: 'is_active', type: 'boolean', default: true, nullable: true })
   isActive: boolean;
 
-  @Column({ name: 'usage_count', default: 0, nullable: true })
+  @Column({ name: 'usage_count', type: 'int', default: 0, nullable: true })
   usageCount: number;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })

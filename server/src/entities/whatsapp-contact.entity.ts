@@ -7,28 +7,28 @@ export class WhatsappContact {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'instance_id' })
+  @Column({ name: 'instance_id', type: 'uuid' })
   instanceId: string;
 
-  @Column({ name: 'phone_number', length: 50 })
+  @Column({ name: 'phone_number', type: 'varchar', length: 50 })
   phoneNumber: string;
 
-  @Column({ name: 'remote_jid', length: 255, nullable: true })
+  @Column({ name: 'remote_jid', type: 'varchar', length: 255, nullable: true })
   remoteJid: string;
 
-  @Column({ name: 'remote_lid', nullable: true })
+  @Column({ name: 'remote_lid', type: 'varchar', nullable: true })
   remoteLid: string;
 
-  @Column({ length: 255 })
+  @Column({ type: 'varchar', length: 255 })
   name: string;
 
   @Column({ name: 'profile_picture_url', type: 'text', nullable: true })
   profilePictureUrl: string;
 
-  @Column({ name: 'is_group', default: false, nullable: true })
+  @Column({ name: 'is_group', type: 'boolean', default: false, nullable: true })
   isGroup: boolean;
 
-  @Column({ name: 'on_whatsapp', default: true, nullable: true })
+  @Column({ name: 'on_whatsapp', type: 'boolean', default: true, nullable: true })
   onWhatsapp: boolean;
 
   @Column({ type: 'text', nullable: true })
@@ -37,7 +37,7 @@ export class WhatsappContact {
   @Column({ type: 'jsonb', default: {} })
   metadata: any;
 
-  @Column({ name: 'is_active', default: true, nullable: true })
+  @Column({ name: 'is_active', type: 'boolean', default: true, nullable: true })
   isActive: boolean;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })

@@ -6,7 +6,7 @@ export class Sector {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'instance_id', nullable: true })
+  @Column({ name: 'instance_id', type: 'uuid', nullable: true })
   instanceId: string;
 
   @Column({ type: 'text' })
@@ -15,25 +15,25 @@ export class Sector {
   @Column({ type: 'text', nullable: true })
   description: string;
 
-  @Column({ name: 'is_default', default: false, nullable: true })
+  @Column({ name: 'is_default', type: 'boolean', default: false, nullable: true })
   isDefault: boolean;
 
-  @Column({ name: 'is_active', default: true, nullable: true })
+  @Column({ name: 'is_active', type: 'boolean', default: true, nullable: true })
   isActive: boolean;
 
-  @Column({ name: 'tipo_atendimento', default: 'humano', nullable: true })
+  @Column({ name: 'tipo_atendimento', type: 'varchar', default: 'humano', nullable: true })
   tipoAtendimento: string;
 
-  @Column({ name: 'gera_ticket', default: false, nullable: true })
+  @Column({ name: 'gera_ticket', type: 'boolean', default: false, nullable: true })
   geraTicket: boolean;
 
-  @Column({ name: 'gera_ticket_usuarios', default: false, nullable: true })
+  @Column({ name: 'gera_ticket_usuarios', type: 'boolean', default: false, nullable: true })
   geraTicketUsuarios: boolean;
 
-  @Column({ name: 'gera_ticket_grupos', default: false, nullable: true })
+  @Column({ name: 'gera_ticket_grupos', type: 'boolean', default: false, nullable: true })
   geraTicketGrupos: boolean;
 
-  @Column({ name: 'grupos_permitidos_todos', default: true, nullable: true })
+  @Column({ name: 'grupos_permitidos_todos', type: 'boolean', default: true, nullable: true })
   gruposPermitidosTodos: boolean;
 
   @Column({ name: 'mensagem_boas_vindas', type: 'text', nullable: true })
@@ -62,13 +62,13 @@ export class UserSector {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'user_id', nullable: true })
+  @Column({ name: 'user_id', type: 'uuid', nullable: true })
   userId: string;
 
-  @Column({ name: 'sector_id', nullable: true })
+  @Column({ name: 'sector_id', type: 'uuid', nullable: true })
   sectorId: string;
 
-  @Column({ name: 'is_primary', default: false, nullable: true })
+  @Column({ name: 'is_primary', type: 'boolean', default: false, nullable: true })
   isPrimary: boolean;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
@@ -83,10 +83,10 @@ export class SectorInstance {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'sector_id' })
+  @Column({ name: 'sector_id', type: 'uuid' })
   sectorId: string;
 
-  @Column({ name: 'instance_id' })
+  @Column({ name: 'instance_id', type: 'uuid' })
   instanceId: string;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
@@ -100,7 +100,7 @@ export class SectorAllowedGroup {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'sector_id' })
+  @Column({ name: 'sector_id', type: 'uuid' })
   sectorId: string;
 
   @Column({ name: 'group_jid', type: 'text' })

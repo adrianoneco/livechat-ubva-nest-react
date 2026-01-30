@@ -8,7 +8,7 @@ export class Webhook {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'user_id', nullable: true })
+  @Column({ name: 'user_id', type: 'uuid', nullable: true })
   userId: string;
 
   @Column({ type: 'text' })
@@ -23,16 +23,16 @@ export class Webhook {
   @Column({ type: 'text', array: true, nullable: true })
   events: string[];
 
-  @Column({ name: 'is_active', default: true, nullable: true })
+  @Column({ name: 'is_active', type: 'boolean', default: true, nullable: true })
   isActive: boolean;
 
   @Column({ type: 'text', nullable: true })
   headers: string;
 
-  @Column({ name: 'retry_count', default: 3, nullable: true })
+  @Column({ name: 'retry_count', type: 'int', default: 3, nullable: true })
   retryCount: number;
 
-  @Column({ name: 'retry_delay', default: 1000, nullable: true })
+  @Column({ name: 'retry_delay', type: 'int', default: 1000, nullable: true })
   retryDelay: number;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
@@ -54,7 +54,7 @@ export class WebhookLog {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'webhook_id', nullable: true })
+  @Column({ name: 'webhook_id', type: 'uuid', nullable: true })
   webhookId: string;
 
   @Column({ type: 'text' })
@@ -66,16 +66,16 @@ export class WebhookLog {
   @Column({ type: 'text', nullable: true })
   response: string;
 
-  @Column({ name: 'status_code', nullable: true })
+  @Column({ name: 'status_code', type: 'int', nullable: true })
   statusCode: number;
 
-  @Column({ default: false, nullable: true })
+  @Column({ type: 'boolean', default: false, nullable: true })
   success: boolean;
 
   @Column({ type: 'text', nullable: true })
   error: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'int', nullable: true })
   duration: number;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
@@ -93,7 +93,7 @@ export class ApiToken {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'user_id', nullable: true })
+  @Column({ name: 'user_id', type: 'uuid', nullable: true })
   userId: string;
 
   @Column({ type: 'text' })
@@ -114,7 +114,7 @@ export class ApiToken {
   @Column({ name: 'last_used_at', type: 'timestamptz', nullable: true })
   lastUsedAt: Date;
 
-  @Column({ name: 'is_active', default: true, nullable: true })
+  @Column({ name: 'is_active', type: 'boolean', default: true, nullable: true })
   isActive: boolean;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
@@ -137,10 +137,10 @@ export class ApiUsageLog {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'token_id', nullable: true })
+  @Column({ name: 'token_id', type: 'uuid', nullable: true })
   tokenId: string;
 
-  @Column({ name: 'user_id', nullable: true })
+  @Column({ name: 'user_id', type: 'uuid', nullable: true })
   userId: string;
 
   @Column({ type: 'text' })
@@ -149,10 +149,10 @@ export class ApiUsageLog {
   @Column({ type: 'text' })
   method: string;
 
-  @Column({ name: 'status_code', nullable: true })
+  @Column({ name: 'status_code', type: 'int', nullable: true })
   statusCode: number;
 
-  @Column({ name: 'response_time', nullable: true })
+  @Column({ name: 'response_time', type: 'int', nullable: true })
   responseTime: number;
 
   @Column({ name: 'ip_address', type: 'text', nullable: true })
