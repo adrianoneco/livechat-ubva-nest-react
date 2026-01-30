@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, BadRequestException, UnauthorizedException, Inject } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -13,15 +13,20 @@ const JWT_REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
 export class AuthService {
   constructor(
     @InjectRepository(Profile)
-    private profileRepository: Repository<Profile>,
+    private readonly profileRepository: Repository<Profile>,
     @InjectRepository(UserPassword)
-    private userPasswordRepository: Repository<UserPassword>,
+    private readonly userPasswordRepository: Repository<UserPassword>,
     @InjectRepository(UserRole)
-    private userRoleRepository: Repository<UserRole>,
-    private jwtService: JwtService,
-  ) {}
+    private readonly userRoleRepository: Repository<UserRole>,
+    @Inject(JwtService)
+    private readonly jwtService: JwtService,
+  ) {
+    console.log('✅ [AuthService] Service initialized');
+  }
 
   async register(email: string, password: string, fullName?: string) {
+    console.log('🔧 [AuthService] Starting registration for:', email);
+
     if (!email || !password) {
       throw new BadRequestException('Email and password are required');
     }
@@ -30,91 +35,114 @@ export class AuthService {
       throw new BadRequestException('Password must be at least 6 characters');
     }
 
-    // Check if user exists
-    const existingUser = await this.profileRepository.findOne({ where: { email } });
-    if (existingUser) {
-      throw new BadRequestException('User already exists');
+    try {
+      // Check if user exists
+      const existingUser = await this.profileRepository.findOne({ where: { email } });
+      if (existingUser) {
+        throw new BadRequestException('User already exists');
+      }
+
+      // Hash password
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const userId = uuidv4();
+
+      // Check if first user (should be admin)
+      const userCount = await this.profileRepository.count();
+      const isFirstUser = userCount === 0;
+
+      console.log('👤 [AuthService] Creating user, isFirstUser:', isFirstUser);
+
+      // Create user
+      const user = await this.profileRepository.save({
+        id: userId,
+        email,
+        fullName: fullName || email.split('@')[0],
+        isActive: true,
+        isApproved: true,
+      });
+
+      console.log('🔐 [AuthService] Saving password...');
+
+      // Store password
+      await this.userPasswordRepository.save({
+        userId: user.id,
+        passwordHash: hashedPassword,
+      });
+
+      console.log('👔 [AuthService] Assigning role...');
+
+      // Assign role
+      const role = isFirstUser ? 'admin' : 'agent';
+      await this.userRoleRepository.save({
+        userId: user.id,
+        role: role as 'admin' | 'supervisor' | 'agent',
+      });
+
+      console.log('✅ [AuthService] Registration completed successfully');
+
+      return {
+        user: {
+          id: user.id,
+          email: user.email,
+          fullName: user.fullName,
+          isApproved: user.isApproved,
+          role,
+        },
+      };
+    } catch (error: any) {
+      console.error('❌ [AuthService] Registration error:', error.message);
+      console.error('Stack:', error.stack);
+      throw error;
     }
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const userId = uuidv4();
-
-    // Check if first user (should be admin)
-    const userCount = await this.profileRepository.count();
-    const isFirstUser = userCount === 0;
-
-    // Create user
-    const user = await this.profileRepository.save({
-      id: userId,
-      email,
-      fullName: fullName || email.split('@')[0],
-      isActive: true,
-      isApproved: true,
-    });
-
-    // Store password
-    await this.userPasswordRepository.save({
-      userId: user.id,
-      passwordHash: hashedPassword,
-    });
-
-    // Assign role
-    const role = isFirstUser ? 'admin' : 'agent';
-    await this.userRoleRepository.save({
-      userId: user.id,
-      role: role as 'admin' | 'supervisor' | 'agent',
-    });
-
-    return {
-      user: {
-        id: user.id,
-        email: user.email,
-        fullName: user.fullName,
-        isApproved: user.isApproved,
-        role,
-      },
-    };
   }
 
   async login(email: string, password: string) {
-    const user = await this.profileRepository.findOne({
-      where: { email },
-      relations: ['password', 'roles'],
-    });
+    try {
+      console.log('🔐 [AuthService] Login attempt for:', email);
 
-    if (!user || !user.password) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
+      const user = await this.profileRepository.findOne({
+        where: { email },
+        relations: ['password', 'roles'],
+      });
 
-    const validPassword = await bcrypt.compare(password, user.password.passwordHash);
-    if (!validPassword) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
+      if (!user || !user.password) {
+        throw new UnauthorizedException('Invalid credentials');
+      }
 
-    const role = user.roles?.[0]?.role || 'agent';
-    const payload = {
-      userId: user.id,
-      email: user.email,
-      role,
-    };
+      const validPassword = await bcrypt.compare(password, user.password.passwordHash);
+      if (!validPassword) {
+        throw new UnauthorizedException('Invalid credentials');
+      }
 
-    const accessToken = this.jwtService.sign(payload);
-    const refreshToken = this.jwtService.sign(payload, {
-      secret: JWT_REFRESH_SECRET,
-      expiresIn: JWT_REFRESH_EXPIRES_IN,
-    });
-
-    return {
-      user: {
-        id: user.id,
+      const role = user.roles?.[0]?.role || 'agent';
+      const payload = {
+        userId: user.id,
         email: user.email,
-        fullName: user.fullName,
         role,
-      },
-      accessToken,
-      refreshToken,
-    };
+      };
+
+      const accessToken = this.jwtService.sign(payload);
+      const refreshToken = this.jwtService.sign(payload, {
+        secret: JWT_REFRESH_SECRET,
+        expiresIn: JWT_REFRESH_EXPIRES_IN,
+      });
+
+      console.log('✅ [AuthService] Login successful for:', email);
+
+      return {
+        user: {
+          id: user.id,
+          email: user.email,
+          fullName: user.fullName,
+          role,
+        },
+        accessToken,
+        refreshToken,
+      };
+    } catch (error: any) {
+      console.error('❌ [AuthService] Login error:', error.message);
+      throw error;
+    }
   }
 
   async refresh(refreshToken: string) {

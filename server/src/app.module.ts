@@ -36,8 +36,8 @@ import { ConfigModule } from '@nestjs/config';
       password: process.env.DB_PASSWORD || 'postgres',
       database: process.env.DB_NAME || 'livechat',
       entities: [__dirname + '/entities/*.entity{.ts,.js}'],
-      synchronize: true, // Don't auto-sync in production - use migrations
-      logging: false,
+      synchronize: true,
+      logging: true,
     }),
 
     AuthModule,
